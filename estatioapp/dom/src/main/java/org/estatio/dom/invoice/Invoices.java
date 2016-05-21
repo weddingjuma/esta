@@ -1,0 +1,299 @@
+/*
+ *
+ *  Copyright 2012-2014 Eurocommercial Properties NV
+ *
+ *
+ *  Licensed under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package org.estatio.dom.invoice;
+
+import java.util.List;
+
+import org.joda.time.LocalDate;
+
+import org.apache.isis.applib.annotation.Action;
+import org.apache.isis.applib.annotation.ActionLayout;
+import org.apache.isis.applib.annotation.Contributed;
+import org.apache.isis.applib.annotation.DomainService;
+import org.apache.isis.applib.annotation.DomainServiceLayout;
+import org.apache.isis.applib.annotation.MemberOrder;
+import org.apache.isis.applib.annotation.Programmatic;
+import org.apache.isis.applib.annotation.RestrictTo;
+import org.apache.isis.applib.annotation.SemanticsOf;
+
+import org.isisaddons.module.security.app.user.MeService;
+import org.isisaddons.module.security.dom.tenancy.ApplicationTenancy;
+
+import org.estatio.dom.UdoDomainRepositoryAndFactory;
+import org.estatio.dom.apptenancy.EstatioApplicationTenancyRepository;
+import org.estatio.dom.asset.FixedAsset;
+import org.estatio.dom.currency.Currency;
+import org.estatio.dom.lease.Lease;
+import org.estatio.dom.lease.invoicing.InvoiceCalculationParameters;
+import org.estatio.dom.party.Party;
+import org.estatio.domsettings.EstatioSettingsService;
+
+@DomainService(repositoryFor = Invoice.class)
+@DomainServiceLayout(
+        named = "Invoices",
+        menuBar = DomainServiceLayout.MenuBar.PRIMARY,
+        menuOrder = "50.4")
+public class Invoices extends UdoDomainRepositoryAndFactory<Invoice> {
+
+    public Invoices() {
+        super(Invoices.class, Invoice.class);
+    }
+
+    @Programmatic
+    public List<Invoice> findMatchingInvoices(
+            final Party seller,
+            final Party buyer,
+            final PaymentMethod paymentMethod,
+            final Lease lease,
+            final InvoiceStatus invoiceStatus,
+            final LocalDate dueDate) {
+        return allMatches(
+                "findMatchingInvoices",
+                "seller", seller,
+                "buyer", buyer,
+                "paymentMethod", paymentMethod,
+                "lease", lease,
+                "status", invoiceStatus,
+                "dueDate", dueDate);
+    }
+
+    @Programmatic
+    public List<Invoice> findInvoicesByRunId(final String runId) {
+        return allMatches("findByRunId",
+                "runId", runId);
+    }
+
+    @Programmatic
+    public List<Invoice> findByRunIdAndApplicationTenancyPath(final String runId, final String applicationTenancyPath) {
+        return allMatches("findByRunIdAndApplicationTenancyPath",
+                "runId", runId,
+                "applicationTenancyPath", applicationTenancyPath);
+    }
+
+    @Programmatic
+    public List<Invoice> findByStatus(
+            final InvoiceStatus status) {
+        return allMatches("findByStatus",
+                "status", status);
+    }
+
+    @Programmatic
+    public List<Invoice> findByLease(final Lease lease) {
+        return allMatches("findByLease", "lease", lease);
+    }
+
+    @Programmatic
+    public List<Invoice> findByBuyer(final Party party) {
+        return allMatches("findByBuyer",
+                "buyer", party);
+    }
+
+    @Programmatic
+    public List<Invoice> findBySeller(final Party party) {
+        return allMatches("findBySeller",
+                "seller", party);
+    }
+
+    @Programmatic
+    public List<Invoice> findByInvoiceNumber(final String invoiceNumber) {
+        return allMatches("findByInvoiceNumber",
+                "invoiceNumber", invoiceNumber);
+    }
+
+    @Programmatic
+    public List<Invoice> findByFixedAssetAndStatus(
+            final FixedAsset fixedAsset,
+            final InvoiceStatus status) {
+        return allMatches("findByFixedAssetAndStatus",
+                "fixedAsset", fixedAsset,
+                "status", status);
+    }
+
+    @Programmatic
+    public List<Invoice> findByFixedAssetAndDueDate(
+            final FixedAsset fixedAsset,
+            final LocalDate dueDate) {
+        return allMatches("findByFixedAssetAndDueDate",
+                "fixedAsset", fixedAsset,
+                "dueDate", dueDate);
+    }
+
+    @Programmatic
+    public List<Invoice> findByFixedAssetAndDueDateAndStatus(
+            final FixedAsset fixedAsset,
+            final LocalDate dueDate,
+            final InvoiceStatus status) {
+        return allMatches("findByFixedAssetAndDueDateAndStatus",
+                "fixedAsset", fixedAsset,
+                "dueDate", dueDate,
+                "status", status);
+    }
+
+    @Programmatic
+    public List<Invoice> findByApplicationTenancyPathAndSellerAndDueDateAndStatus(
+            final String applicationTenancyPath,
+            final Party seller,
+            final LocalDate dueDate,
+            final InvoiceStatus status) {
+        return allMatches("findByApplicationTenancyPathAndSellerAndDueDateAndStatus",
+                "applicationTenancyPath", applicationTenancyPath,
+                "seller", seller,
+                "dueDate", dueDate,
+                "status", status);
+    }
+
+
+    // //////////////////////////////////////
+
+    @ActionLayout(contributed = Contributed.AS_NEITHER)
+    @Action(semantics = SemanticsOf.NON_IDEMPOTENT)
+    @MemberOrder(sequence = "1")
+    public Invoice newInvoiceForLease(
+            final Lease lease,
+            final LocalDate dueDate,
+            final PaymentMethod paymentMethod,
+            final Currency currency,
+            final ApplicationTenancy applicationTenancy) {
+        return newInvoice(applicationTenancy,
+                lease.getPrimaryParty(),
+                lease.getSecondaryParty(),
+                paymentMethod,
+                currency,
+                dueDate,
+                lease, null);
+    }
+
+    public List<ApplicationTenancy> choices4NewInvoiceForLease() {
+        return estatioApplicationTenancyRepository.selfOrChildrenOf(meService.me().getTenancy());
+    }
+
+
+    // //////////////////////////////////////
+
+    @Programmatic
+    public Invoice newInvoice(
+            final ApplicationTenancy applicationTenancy,
+            final Party seller,
+            final Party buyer,
+            final PaymentMethod paymentMethod,
+            final Currency currency,
+            final LocalDate dueDate,
+            final Lease lease,
+            final String interactionId
+    ) {
+        Invoice invoice = newTransientInstance();
+        invoice.setApplicationTenancyPath(applicationTenancy.getPath());
+        invoice.setBuyer(buyer);
+        invoice.setSeller(seller);
+        invoice.setPaymentMethod(paymentMethod);
+        invoice.setStatus(InvoiceStatus.NEW);
+        invoice.setCurrency(currency);
+        invoice.setLease(lease);
+        invoice.setDueDate(dueDate);
+        invoice.setUuid(java.util.UUID.randomUUID().toString());
+        invoice.setRunId(interactionId);
+
+        // copy down form the agreement, we require all invoice items to relate
+        // back to this (root) fixed asset
+        invoice.setPaidBy(lease.getPaidBy());
+        invoice.setFixedAsset(lease.getProperty());
+
+        persistIfNotAlready(invoice);
+        getContainer().flush();
+        return invoice;
+    }
+
+    @Programmatic
+    public Invoice findOrCreateMatchingInvoice(
+            final ApplicationTenancy applicationTenancy,
+            final PaymentMethod paymentMethod,
+            final Lease lease,
+            final InvoiceStatus invoiceStatus,
+            final LocalDate dueDate,
+            final String interactionId) {
+        Party buyer = lease.getSecondaryParty();
+        Party seller = lease.getPrimaryParty();
+        return findOrCreateMatchingInvoice(
+                applicationTenancy, seller, buyer, paymentMethod, lease, invoiceStatus, dueDate, interactionId);
+    }
+
+    @Programmatic
+    public Invoice findMatchingInvoice(
+            final Party seller,
+            final Party buyer,
+            final PaymentMethod paymentMethod,
+            final Lease lease,
+            final InvoiceStatus invoiceStatus,
+            final LocalDate dueDate) {
+        final List<Invoice> invoices = findMatchingInvoices(
+                seller, buyer, paymentMethod, lease, invoiceStatus, dueDate);
+        if (invoices == null || invoices.size() == 0) {
+            return null;
+        }
+        return invoices.get(0);
+    }
+
+    @Programmatic
+    public Invoice findOrCreateMatchingInvoice(
+            final ApplicationTenancy applicationTenancy,
+            final Party seller,
+            final Party buyer,
+            final PaymentMethod paymentMethod,
+            final Lease lease,
+            final InvoiceStatus invoiceStatus,
+            final LocalDate dueDate,
+            final String interactionId) {
+        final List<Invoice> invoices = findMatchingInvoices(
+                seller, buyer, paymentMethod, lease, invoiceStatus, dueDate);
+        if (invoices == null || invoices.size() == 0) {
+            return newInvoice(applicationTenancy, seller, buyer, paymentMethod, settings.systemCurrency(), dueDate, lease, interactionId);
+        }
+        return invoices.get(0);
+    }
+
+    // //////////////////////////////////////
+
+    @Action(semantics = SemanticsOf.SAFE, restrictTo = RestrictTo.PROTOTYPING)
+    @MemberOrder(sequence = "98")
+    public List<Invoice> allInvoices() {
+        return allInstances();
+    }
+
+    // //////////////////////////////////////
+
+    @Programmatic
+    public void removeRuns(InvoiceCalculationParameters parameters) {
+        List<Invoice> invoices = findByFixedAssetAndDueDateAndStatus(parameters.property(), parameters.invoiceDueDate(), InvoiceStatus.NEW);
+        for (Invoice invoice : invoices) {
+            invoice.remove();
+        }
+    }
+
+    // //////////////////////////////////////
+
+    @javax.inject.Inject
+    private EstatioSettingsService settings;
+
+    @javax.inject.Inject
+    private EstatioApplicationTenancyRepository estatioApplicationTenancyRepository;
+
+    @javax.inject.Inject
+    private MeService meService;
+
+}

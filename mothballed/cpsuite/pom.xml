@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ @author Johannes Link (business@johanneslink.net)
+ 
+ Published under Apache License, Version 2.0 (http://apache.org/licenses/LICENSE-2.0)
+ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.estatio</groupId>
+        <artifactId>estatio</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <groupId>org.estatio.thirdparty.org.junit.extensions</groupId>
+    <artifactId>cpsuite</artifactId>
+    <version>1.2.6</version>
+    <packaging>jar</packaging>
+    
+    <name>Johannes Link's cpsuite</name>
+    <description>
+        This is a rebundling of Johannes Link's cpsuite utility.  It is used by
+        Estatio to run dom unit tests from within the integration test suite
+        (for a unified code coverage figure)
+    </description>
+
+    <url>http://johanneslink.net/projects/cpsuite.jsp</url>
+    
+    <properties>
+        <siteBaseDir>..</siteBaseDir>
+    </properties>
+    
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
+   	</dependencies>
+   	
+</project>
